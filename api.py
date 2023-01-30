@@ -4,18 +4,21 @@ from urllib.parse import urlencode
 
 
 class ghlapi(object):
-    API = "https://rest.gohighlevel.com/v1/"
+    API = "https://rest.gohighlevel.com"
 
-    def get(self, route, headers, params=None):
+    def get(self, route, headers, params=None, version="v1"):
+        # defaults to version 1
         # TODO: explain why params must be encoded before reaching this function
-        url = self.API + route
+
+        url = f"{self.API}/{version}/{route}"
+
         if params:
             url += f"?{urlencode(params)}"
         print(url)
         response = requests.get(url=url, headers=headers)
         body = response.json()
-        self.rate_limit_reached(response.headers)
-        self.verify_response(body)
+        # self.rate_limit_reached(response.headers)
+        # self.verify_response(body)
         return body
 
     def post(self, route, headers, values=None):
@@ -47,6 +50,7 @@ class ghlapi(object):
             print(exc)
         return False
 
+    # TODO: change structure of error message to include the dict returned not just the "msg" value
     def verify_response(self, response):
         if "msg" in response.keys():
             raise ValueError(response["msg"])

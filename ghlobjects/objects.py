@@ -37,6 +37,11 @@ class Location(AbstractObject):
         return subs
 
 
+class Appointments(AbstractObject):
+    def __init__(self):
+        super().__init__()
+
+
 class Submission(AbstractObject):
     def __init__(self):
         super().__init__()
