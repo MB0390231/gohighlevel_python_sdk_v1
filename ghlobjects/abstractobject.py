@@ -1,6 +1,6 @@
 import json
 import collections.abc as collections_abc
-from GoHighLevelSDK.api import ghlapi
+from gohighlevel_python_sdk.api import ghlapi
 
 
 class AbstractObject(collections_abc.MutableMapping):

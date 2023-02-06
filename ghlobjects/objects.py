@@ -1,4 +1,4 @@
-from GoHighLevelSDK.ghlobjects.abstractobject import AbstractObject
+from gohighlevel_python_sdk.ghlobjects.abstractobject import AbstractObject
 
 
 class Agency(AbstractObject):
