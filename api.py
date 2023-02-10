@@ -2,6 +2,9 @@ import requests, json, sys, time
 
 from urllib.parse import urlencode
 
+V1 = "https://rest.gohighlevel.com/v1/"
+V2 = "https://services.leadconnectorhq.com/"
+
 
 class ghlapi(object):
     API = "https://rest.gohighlevel.com"
@@ -17,8 +20,8 @@ class ghlapi(object):
         print(url)
         response = requests.get(url=url, headers=headers)
         body = response.json()
-        # self.rate_limit_reached(response.headers)
-        # self.verify_response(body)
+        self.rate_limit_reached(response.headers)
+        self.verify_response(body)
         return body
 
     def post(self, route, headers, values=None):
