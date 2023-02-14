@@ -1,5 +1,5 @@
 import requests, json, sys, time
-
+from gohighlevel_python_sdk.exceptions import GHLRequestError
 from urllib.parse import urlencode
 
 V1 = "https://rest.gohighlevel.com/v1/"
@@ -8,6 +8,8 @@ V2 = "https://services.leadconnectorhq.com/"
 
 class ghlapi(object):
     API = "https://rest.gohighlevel.com"
+    REQUESTS_REMAINING = None
+    SECONDS_UNTIL_RATE_RESET = None
 
     def get(self, route, headers, params=None, version="v1"):
         # defaults to version 1
@@ -20,8 +22,8 @@ class ghlapi(object):
         print(url)
         response = requests.get(url=url, headers=headers)
         body = response.json()
-        self.rate_limit_reached(response.headers)
-        self.verify_response(body)
+        self.write_rate_remaining(response.headers)
+        self.verify_response(response)
         return body
 
     def post(self, route, headers, values=None):
@@ -31,32 +33,32 @@ class ghlapi(object):
         else:
             response = requests.post(url, headers, data=json.dumps(values))
         body = response.json()
-        self.rate_limit_reached(response.headers)
-        self.verify_response(body)
+        self.write_rate_remaining(response.headers)
+        self.verify_response(response)
         return body
 
     def put(self, route, headers, values):
         url = self.API + route
         response = requests.put(url, headers, data=json.dumps(values))
         body = response.json()
-        self.rate_limit_reached(response.headers)
-        self.verify_response(body)
+        self.write_rate_remaining(response.headers)
+        self.verify_response(response)
         return body
 
     # TODO: Because GHL doesn't document what error messages they will give, I will have to wait and see smh
-    def rate_limit_reached(self, headers):
+    def write_rate_remaining(self, headers):
         try:
-            if headers["RateLimit-Remaining"] == "0":
-                seconds_till_reset = headers["RateLimit-Reset"]
-                raise Exception(f"Rate Limit Reached. Seconds until reset: {seconds_till_reset}")
+            self.REQUESTS_REMAINING = headers["RateLimit-Remaining"]
+            self.SECONDS_UNTIL_RATE_RESET = headers["RateLimit-Reset"]
         except Exception as exc:
             print(exc)
         return False
 
     # TODO: change structure of error message to include the dict returned not just the "msg" value
     def verify_response(self, response):
-        if "msg" in response.keys():
-            raise ValueError(response["msg"])
+        if response.status_code != 200:
+            message = response.json()["msg"]
+            raise GHLRequestError(message)
         return True
 
     def beauty_sleep(t):
