@@ -1,0 +1,2 @@
+class GHLRequestError(Exception):
+    pass
