@@ -61,7 +61,7 @@ class Calender(AbstractObject):
         params["calendarId"] = self["id"]
         route = "appointments/"
         query = self.api.get(route=route, headers=self.api.construct_headers(token=self["apiKey"]), params=params)
-        return query
+        return [AbstractObject.create_object(appt, target_class=Appointments) for appt in query["appointments"]]
 
 
 class Appointments(AbstractObject):
