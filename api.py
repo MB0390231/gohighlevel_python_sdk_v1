@@ -19,7 +19,6 @@ class ghlapi(object):
 
         if params:
             url += f"?{urlencode(params)}"
-        print(url)
         response = requests.get(url=url, headers=headers)
         body = response.json()
         self.write_rate_remaining(response.headers)
