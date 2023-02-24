@@ -20,7 +20,10 @@ class ghlapi(object):
         if params:
             url += f"?{urlencode(params)}"
         response = requests.get(url=url, headers=headers)
-        body = response.json()
+        try:
+            body = response.json()
+        except:
+            body = response.text
         self.write_rate_remaining(response.headers)
         self.verify_response(response)
         return body
