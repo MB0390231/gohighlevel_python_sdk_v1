@@ -9,7 +9,12 @@ class Agency(AbstractObject):
 
     def get_locations(self):
         route = "locations/"
-        query = self.api.get(route=route, headers=self.api.construct_headers(self.token))
+        method = "GET"
+        query = self.api.make_request(
+            token=self.token,
+            route=route,
+            method=method,
+        )
         locations = []
         for location in query["locations"]:
             locations.append(AbstractObject.create_object(data=location, target_class=Location))
@@ -43,7 +48,8 @@ class Location(AbstractObject):
 
     def get_calendar_services(self):
         route = "calendars/services"
-        query = self.api.get(route=route, headers=self.api.construct_headers(token=self["apiKey"]))
+        method = "GET"
+        query = self.api.make_request(token=self["apiKey"], route=route, method=method)
         calendars = [AbstractObject.create_object(cal, target_class=Calender) for cal in query["services"]]
         # manually inject api key
         for cals in calendars:
@@ -60,7 +66,8 @@ class Calender(AbstractObject):
             raise ValueError("Startdate and Enddate are required.")
         params["calendarId"] = self["id"]
         route = "appointments/"
-        query = self.api.get(route=route, headers=self.api.construct_headers(token=self["apiKey"]), params=params)
+        method = "GET"
+        query = self.api.make_request(token=self["apiKey"], route=route, method=method, params=params)
         return [AbstractObject.create_object(appt, target_class=Appointments) for appt in query["appointments"]]
 
 

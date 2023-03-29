@@ -1,79 +1,63 @@
-import requests, json, sys, time
+import requests, json
 from gohighlevel_python_sdk.exceptions import GHLRequestError
-from urllib.parse import urlencode
+import logging
 
-V1 = "https://rest.gohighlevel.com/v1/"
-V2 = "https://services.leadconnectorhq.com/"
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
 
 
 class ghlapi(object):
-    API = "https://rest.gohighlevel.com"
+    API = "https://rest.gohighlevel.com/v1"
     REQUESTS_REMAINING = None
     SECONDS_UNTIL_RATE_RESET = None
 
-    def get(self, route, headers, params=None, version="v1"):
-        # defaults to version 1
-        # TODO: explain why params must be encoded before reaching this function
-
-        url = f"{self.API}/{version}/{route}"
-
-        if params:
-            url += f"?{urlencode(params)}"
-        response = requests.get(url=url, headers=headers)
+    def make_request(self, token, method, route, params=None, values=None, file=None):
+        headers = self.construct_headers(token=token)
+        if not params:
+            params = {}
+        url = f"{self.API}/{route}"
+        if method in ["GET", "DELETE"]:
+            response = requests.request(
+                url=url,
+                method=method,
+                headers=headers,
+                params=params,
+            )
+        elif method == "POST":
+            if file:
+                response = requests.post(url, files=file, headers=headers)
+                return
+            elif values is None:
+                response = requests.post(url, headers=headers)
+            else:
+                response = requests.post(url, data=json.dumps(values), headers=headers)
+        elif method == "PUT":
+            response = requests.put(url, data=json.dumps(values), headers=headers)
+        else:
+            raise ValueError("Invalid request method")
         try:
             body = response.json()
         except:
-            body = response.text
-        self.write_rate_remaining(response.headers)
-        self.verify_response(response)
-        return body
-
-    def post(self, route, headers, values=None):
-        url = self.API + route
-        if values is None:
-            response = requests.post(url, headers)
-        else:
-            response = requests.post(url, headers, data=json.dumps(values))
-        body = response.json()
-        self.write_rate_remaining(response.headers)
-        self.verify_response(response)
-        return body
-
-    def put(self, route, headers, values):
-        url = self.API + route
-        response = requests.put(url, headers, data=json.dumps(values))
-        body = response.json()
-        self.write_rate_remaining(response.headers)
-        self.verify_response(response)
+            raise GHLRequestError(response.text)
+        self._update_rate_limits(response.headers)
+        self._verify_response(response)
         return body
 
     # TODO: Because GHL doesn't document what error messages they will give, I will have to wait and see smh
-    def write_rate_remaining(self, headers):
+    def _update_rate_limits(self, headers):
         try:
             self.REQUESTS_REMAINING = headers["RateLimit-Remaining"]
             self.SECONDS_UNTIL_RATE_RESET = headers["RateLimit-Reset"]
-        except Exception as exc:
-            print(exc)
+        except Exception as e:
+            LOGGER.exception(f"Error updating rate limits: {e}", exc_info=True)
         return False
 
     # TODO: change structure of error message to include the dict returned not just the "msg" value
-    def verify_response(self, response):
+    def _verify_response(self, response):
         if response.status_code != 200:
-            message = response.json()["msg"]
+            message = f"Request failed with status code {response.status_code}\n Request URL: {response.url}\n Request Headers: {response.headers}\n Request Body: {response.text}"
             raise GHLRequestError(message)
         return True
-
-    def beauty_sleep(t):
-        """
-        Just a pretty way to countdown in the terminal
-        t is an interger
-        """
-        for i in range(t, 0, -1):
-            sys.stdout.write(str(i) + " ")
-            sys.stdout.flush()
-            time.sleep(1)
-        print("")
-        return
 
     def construct_headers(self, token):
         return {
