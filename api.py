@@ -1,5 +1,5 @@
 import requests, json
-from gohighlevel_python_sdk.exceptions import GHLRequestError
+from gohighlevel_python_sdk_v1.exceptions import GHLRequestError
 import logging
 
 LOGGER = logging.getLogger(__name__)
@@ -11,11 +11,14 @@ class ghlapi(object):
     REQUESTS_REMAINING = None
     SECONDS_UNTIL_RATE_RESET = None
 
-    def make_request(self, token, method, route, params=None, values=None, file=None):
+    def make_request(self, token, method, route, params=None, values=None, file=None, url_override=None):
         headers = self.construct_headers(token=token)
         if not params:
             params = {}
-        url = f"{self.API}/{route}"
+        if url_override:
+            url = url_override
+        else:
+            url = f"{self.API}/{route}"
         if method in ["GET", "DELETE"]:
             response = requests.request(
                 url=url,
